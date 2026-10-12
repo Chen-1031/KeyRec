@@ -21,10 +21,9 @@ const rows = [
 const labels={ovo_bw:'OVO-Bench / Backward',ovo_rt:'OVO-Bench / Realtime',sb:'StreamingBench / Realtime',lvb:'LongVideoBench / Validation',mme:'Video-MME-v2 / Overall'};
 const names=['Vanilla','STC-Pruner','STOM-CTR','CausalMem','KeyRec'];
 const $=s=>document.querySelector(s);
-$('.read-grid').innerHTML='<i></i>'.repeat(14);
 function updateResults(){
  const r=rows.find(r=>r[0]===$('#benchmark').value&&r[1]===$('#model').value), values=r.slice(2);
- $('#bars').innerHTML=values.map((v,i)=>`<div class="bar-row ${i===0?'vanilla':i===4?'keyrec':''}"><div class="bar-name">${names[i]}${i===0?'<small>UNCOMPRESSED REFERENCE</small>':''}</div><div class="bar-track"><div class="bar-fill" style="width:${v??0}%"></div></div><span class="bar-value">${v===null?'—':v.toFixed(2)}</span></div>`).join('');
+ $('#bars').innerHTML=values.map((v,i)=>`<div class="bar-row ${i===0?'vanilla':i===4?'keyrec':''}"><div class="bar-name">${names[i]}</div><div class="bar-track"><div class="bar-fill" style="width:${v??0}%"></div></div><span class="bar-value">${v===null?'—':v.toFixed(2)}</span></div>`).join('');
  $('#bars').setAttribute('aria-label',`${r[1]}, ${labels[r[0]]}. Accuracy, zero-to-100 scale. `+values.map((v,i)=>`${names[i]}: ${v??'unsupported'}`).join('; '));
  const diff=values[4]-Math.max(...values.slice(1,4).filter(v=>v!==null));
  $('#result-insight').innerHTML=diff>0?`<strong>+${diff.toFixed(2)} points</strong> over the strongest compressed baseline in this setting.`:diff===0?'<strong>Tied best compressed result</strong> in this setting.':`KeyRec is <strong>${Math.abs(diff).toFixed(2)} points below</strong> the strongest compressed baseline in this setting.`;
@@ -41,3 +40,25 @@ function stopTour(){clearInterval(timer);timer=null;$('#animate').textContent='�
 $('#router').addEventListener('change',()=>{stopTour();updateAllocation()});
 $('#animate').addEventListener('click',()=>{if(timer){stopTour();return}$('#animate').textContent='Ⅱ Pause allocation tour';timer=setInterval(()=>{$('#router').value=String((Number($('#router').value)+1)%5);updateAllocation()},2200)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stopTour()});updateAllocation();
+
+// Copy exactly the visible, user-supplied BibTeX. Selection remains available
+// when clipboard access is unavailable (for example in some local-file views).
+async function copyCitation(){
+  const code = document.getElementById('bibtex');
+  const status = document.getElementById('copy-status');
+  try {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('Clipboard unavailable');
+    await navigator.clipboard.writeText(code.textContent);
+    status.textContent = 'BibTeX copied to clipboard.';
+  } catch (_) {
+    const selection = window.getSelection();
+    if (selection) {
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    status.textContent = 'Select the BibTeX and press Ctrl+C (Windows) or ⌘C (Mac) to copy.';
+  }
+}
+document.getElementById('copy-citation').addEventListener('click', copyCitation);
